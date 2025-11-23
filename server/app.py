@@ -16,8 +16,74 @@ db.init_app(app)
 
 api = Api(app)
 
+# HOME ROUTE 
+
 class Home(Resource):
-    pass
+    def get(self):
+        response_dict = {
+            "message": "Welcome to the Newsletter RESTful API",
+        }
+
+        response = make_response(
+            response_dict,
+            200
+        )
+
+        return response
+
+api.add_resource(Home, "/")
+
+# LIST + CREATE
+
+class Newsletters(Resource):
+
+    # GET all newsletters
+    def get(self):
+        response_dict_list = [n.to_dict() for n in Newsletter.query.all()]
+
+        response = make_response(
+            response_dict_list,
+            200,
+        )
+        return response
+
+    # POST create new newsletter
+    def post(self):
+        new_record = Newsletter(
+            title=request.form["title"],
+            body=request.form["body"]
+        )
+
+        db.session.add(new_record)
+        db.session.commit()
+
+        response_dict = new_record.to_dict()
+
+        response = make_response(
+            response_dict,
+            201
+        )
+        return response
+
+api.add_resource(Newsletters, "/newsletters")
+
+# GET SINGLE RECORD 
+
+class NewsletterByID(Resource):
+    def get(self, id):
+        newsletter = Newsletter.query.filter_by(id=id).first()
+
+        if newsletter:
+            response_dict = newsletter.to_dict()
+            response = make_response(
+                response_dict,
+                200,
+            )
+            return response
+        else:
+            return make_response({"error": "Record not found"}, 404)
+
+api.add_resource(NewsletterByID, "/newsletters/<int:id>")
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
